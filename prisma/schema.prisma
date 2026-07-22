@@ -14,18 +14,21 @@ datasource db {
 
 // Guild configuration stored per guild
 model GuildConfig {
-  id                 String   @id @default(cuid())
-  guildId            String   @unique
-  prefix             String   @default("!")
-  modLogChannelId    String?
-  directiveRoles     Int      @default(0)
-  seniorHrRoles      Int      @default(0)
-  managementRoles    Int      @default(0)
-  supervisorRoles    Int      @default(0)
-  administratorRoles Int      @default(0)
-  moderatorRoles     Int      @default(0)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id      String @id @default(cuid())
+  guildId String @unique
+
+  prefix          String  @default("!")
+  modLogChannelId String?
+
+  directiveRoles     String[]
+  seniorHrRoles      String[]
+  managementRoles    String[]
+  supervisorRoles    String[]
+  administratorRoles String[]
+  moderatorRoles     String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("guild_configs")
 }

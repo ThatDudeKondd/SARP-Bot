@@ -26,7 +26,7 @@ type ResolvedValue = string | number | boolean | User | TextBasedChannel | Role;
  */
 export class CommandContext {
   private readonly message?: Message;
-  private readonly interaction?: ChatInputCommandInteraction;
+  private readonly _interaction?: ChatInputCommandInteraction;
   private readonly resolvedArgs = new Map<string, ResolvedValue>();
 
   public readonly isPrefix: boolean;
@@ -46,7 +46,7 @@ export class CommandContext {
       this.args = args;
       this.resolvePrefixArgs(options, args);
     } else {
-      this.interaction = source;
+      this._interaction = source;
       this.isPrefix = false;
       this.isSlash = true;
       this.args = [];
@@ -54,42 +54,42 @@ export class CommandContext {
   }
 
   get client(): Client {
-    return (this.message?.client ?? this.interaction!.client) as Client;
+    return (this.message?.client ?? this._interaction!.client) as Client;
   }
 
   get user(): User {
-    return this.isSlash ? this.interaction!.user : this.message!.author;
+    return this.isSlash ? this._interaction!.user : this.message!.author;
   }
 
   get member(): GuildMember | null {
     const member = this.isSlash
-      ? this.interaction!.member
+      ? this._interaction!.member
       : this.message!.member;
     return (member as GuildMember) ?? null;
   }
 
   get guild(): Guild | null {
-    return this.isSlash ? this.interaction!.guild : this.message!.guild;
+    return this.isSlash ? this._interaction!.guild : this.message!.guild;
   }
 
   get channel(): TextBasedChannel | null {
-    return this.isSlash ? this.interaction!.channel : this.message!.channel;
+    return this.isSlash ? this._interaction!.channel : this.message!.channel;
   }
 
   /** The underlying Message or Interaction, for anything not covered by this wrapper. */
   get raw(): Message | ChatInputCommandInteraction {
-    return (this.message ?? this.interaction)!;
+    return (this.message ?? this._interaction)!;
   }
 
   async reply(content: string | ReplyOptions): Promise<unknown> {
     const payload = typeof content === "string" ? { content } : content;
 
     if (this.isSlash) {
-      const interaction = this.interaction!;
-      if (interaction.deferred || interaction.replied) {
-        return interaction.followUp(payload as any);
+      const _interaction = this._interaction!;
+      if (_interaction.deferred || _interaction.replied) {
+        return _interaction.followUp(payload as any);
       }
-      return interaction.reply(payload as any);
+      return _interaction.reply(payload as any);
     }
 
     const { ephemeral, ...rest } = payload;
@@ -100,45 +100,49 @@ export class CommandContext {
   async defer(ephemeral = false): Promise<void> {
     if (
       this.isSlash &&
-      !this.interaction!.deferred &&
-      !this.interaction!.replied
+      !this._interaction!.deferred &&
+      !this._interaction!.replied
     ) {
-      await this.interaction!.deferReply({ ephemeral });
+      await this._interaction!.deferReply({ ephemeral });
     }
   }
 
+  get interaction(): ChatInputCommandInteraction | undefined {
+    return this._interaction;
+  }
+
   getString(name: string): string | null {
-    if (this.isSlash) return this.interaction!.options.getString(name);
+    if (this.isSlash) return this._interaction!.options.getString(name);
     const value = this.resolvedArgs.get(name);
     return typeof value === "string" ? value : null;
   }
 
   getInteger(name: string): number | null {
-    if (this.isSlash) return this.interaction!.options.getInteger(name);
+    if (this.isSlash) return this._interaction!.options.getInteger(name);
     const value = this.resolvedArgs.get(name);
     return typeof value === "number" ? value : null;
   }
 
   getNumber(name: string): number | null {
-    if (this.isSlash) return this.interaction!.options.getNumber(name);
+    if (this.isSlash) return this._interaction!.options.getNumber(name);
     const value = this.resolvedArgs.get(name);
     return typeof value === "number" ? value : null;
   }
 
   getBoolean(name: string): boolean | null {
-    if (this.isSlash) return this.interaction!.options.getBoolean(name);
+    if (this.isSlash) return this._interaction!.options.getBoolean(name);
     const value = this.resolvedArgs.get(name);
     return typeof value === "boolean" ? value : null;
   }
 
   getUser(name: string): User | null {
-    if (this.isSlash) return this.interaction!.options.getUser(name);
+    if (this.isSlash) return this._interaction!.options.getUser(name);
     return (this.resolvedArgs.get(name) as User) ?? null;
   }
 
   getChannel(name: string): TextBasedChannel | null {
     if (this.isSlash)
-      return this.interaction!.options.getChannel(
+      return this._interaction!.options.getChannel(
         name,
       ) as TextBasedChannel | null;
     return (this.resolvedArgs.get(name) as TextBasedChannel) ?? null;
@@ -146,7 +150,7 @@ export class CommandContext {
 
   getRole(name: string): Role | null {
     if (this.isSlash)
-      return this.interaction!.options.getRole(name) as Role | null;
+      return this._interaction!.options.getRole(name) as Role | null;
     return (this.resolvedArgs.get(name) as Role) ?? null;
   }
 
