@@ -71,9 +71,22 @@ process.on("unhandledRejection", (reason) => {
 // Graceful shutdown
 async function shutdown() {
   logger.info("Shutting down bot...");
-  await disconnectDatabase();
-  await client.destroy();
-  process.exit(0);
+
+  const forceExit = setTimeout(() => {
+    logger.error("Shutdown timed out, forcing exit.");
+    process.exit(1);
+  }, 3000);
+  forceExit.unref();
+
+  try {
+    await disconnectDatabase();
+    await client.destroy();
+  } catch (error) {
+    logger.error("Error during shutdown:", error);
+  } finally {
+    clearTimeout(forceExit);
+    process.exit(0);
+  }
 }
 
 process.on("SIGINT", shutdown);

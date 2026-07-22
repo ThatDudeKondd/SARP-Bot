@@ -7,6 +7,7 @@ import {
   TextBasedChannel,
   Role,
   Client,
+  MessageFlags,
 } from "discord.js";
 import { CommandOption } from "../types/UnifiedCommand.js";
 
@@ -14,8 +15,7 @@ export interface ReplyOptions {
   content?: string;
   embeds?: any[];
   components?: any[];
-  /** Ignored for prefix commands — Discord only supports ephemeral replies for interactions. */
-  ephemeral?: boolean;
+  flags?: number | bigint;
 }
 
 type ResolvedValue = string | number | boolean | User | TextBasedChannel | Role;
@@ -28,6 +28,7 @@ export class CommandContext {
   private readonly message?: Message;
   private readonly _interaction?: ChatInputCommandInteraction;
   private readonly resolvedArgs = new Map<string, ResolvedValue>();
+  private lastReply?: Message;
 
   public readonly isPrefix: boolean;
   public readonly isSlash: boolean;
@@ -72,6 +73,14 @@ export class CommandContext {
     return this.isSlash ? this._interaction!.guild : this.message!.guild;
   }
 
+  get subcommand(): string | null {
+    if (this.isSlash) {
+      return this._interaction!.options.getSubcommand(false);
+    }
+
+    return this.args[0] ?? null;
+  }
+
   get channel(): TextBasedChannel | null {
     return this.isSlash ? this._interaction!.channel : this.message!.channel;
   }
@@ -85,15 +94,58 @@ export class CommandContext {
     const payload = typeof content === "string" ? { content } : content;
 
     if (this.isSlash) {
-      const _interaction = this._interaction!;
-      if (_interaction.deferred || _interaction.replied) {
-        return _interaction.followUp(payload as any);
+      const interaction = this._interaction!;
+
+      if (interaction.deferred || interaction.replied) {
+        return interaction.followUp(payload as any);
       }
-      return _interaction.reply(payload as any);
+
+      return interaction.reply(payload as any);
     }
 
-    const { ephemeral, ...rest } = payload;
-    return this.message!.reply(rest as any);
+    // Prefix commands cannot use Discord interaction flags
+    const { flags, ...messagePayload } = payload;
+
+    this.lastReply = await this.message!.reply(messagePayload as any);
+
+    return this.lastReply;
+  }
+
+  async editReply(content: ReplyOptions): Promise<Message> {
+    if (this.isSlash) {
+      const interaction = this._interaction!;
+
+      if (!interaction.deferred && !interaction.replied) {
+        throw new Error(
+          "Cannot edit an interaction before replying or deferring.",
+        );
+      }
+
+      return (await interaction.editReply(content as any)) as Message;
+    }
+
+    const { flags, ...messagePayload } = content;
+
+    if (!this.lastReply) {
+      this.lastReply = await this.message!.reply(messagePayload as any);
+      return this.lastReply;
+    }
+
+    await this.lastReply.edit(messagePayload as any);
+
+    return this.lastReply;
+  }
+
+  async fetchReply(): Promise<Message> {
+    if (this.isSlash) {
+      return (await this._interaction!.fetchReply()) as Message;
+    }
+
+    if (!this.lastReply) {
+      throw new Error("No reply has been sent yet.");
+    }
+
+    return this.lastReply;
   }
 
   /** Defers the reply. No-op for prefix commands, which have no such concept. */
@@ -103,12 +155,22 @@ export class CommandContext {
       !this._interaction!.deferred &&
       !this._interaction!.replied
     ) {
-      await this._interaction!.deferReply({ ephemeral });
+      await this._interaction!.deferReply({
+        flags: ephemeral ? MessageFlags.Ephemeral : undefined,
+      });
     }
   }
 
   get interaction(): ChatInputCommandInteraction | undefined {
     return this._interaction;
+  }
+
+  get deferred(): boolean {
+    return this._interaction?.deferred ?? false;
+  }
+
+  get replied(): boolean {
+    return this._interaction?.replied ?? false;
   }
 
   getString(name: string): string | null {

@@ -49,7 +49,7 @@ export class CommandLoader {
             if (
               !command ||
               !command.name ||
-              typeof command.execute !== "function"
+              (!command.execute && !command.subcommands)
             ) {
               logger.warn(`Skipped invalid command in ${filePath}`);
               continue;

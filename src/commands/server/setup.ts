@@ -6,23 +6,22 @@ import {
   RoleSelectMenuBuilder,
 } from "discord.js";
 import { superAdminId } from "../../config/config.js";
-import { defineCommand } from "../../utils/defineCommand.js";
+//import { defineCommand } from "../../utils/defineCommand.js";
 import { prisma } from "../../database/client.js";
 import { logger } from "../../utils/logger.js";
 import { CONSTANTS } from "../../config/constants.js";
+import { SubCommand } from "../../types/UnifiedCommand.js";
 
-export default defineCommand({
+export default {
   name: "setup",
   description: "Setup the server's configuration",
-  category: "server",
-  cooldown: 5000,
   execute: async (ctx) => {
     try {
       if (!ctx.guild) {
         throw new Error("Setup must be run inside a guild.");
       }
 
-      await ctx.interaction?.deferReply();
+      await ctx.defer();
 
       console.log({
         replied: ctx.interaction?.replied,
@@ -50,7 +49,7 @@ export default defineCommand({
         )
         .setColor(CONSTANTS.EMBED_COLOR)
         .setTimestamp();
-      await ctx.interaction?.editReply({
+      await ctx.editReply({
         embeds: [introEmbed],
         components: [],
       });
@@ -125,11 +124,11 @@ export default defineCommand({
           )
           .setColor(CONSTANTS.EMBED_COLOR)
           .setTimestamp();
-        await ctx.interaction?.editReply({
+        await ctx.editReply({
           embeds: [stepEmbed],
           components: rows,
         });
-        const stepMessage = await ctx.interaction?.fetchReply();
+        const stepMessage = await ctx.fetchReply();
 
         const collectorFilter = (i: any) =>
           i.user.id === ctx.user.id &&
@@ -152,16 +151,33 @@ export default defineCommand({
             )
             .setColor(CONSTANTS.EMBED_COLOR)
             .setTimestamp();
-          await selection?.update({ embeds: [selectedEmbed], components: [] });
-        } catch (err) {
-          await ctx.interaction?.editReply({
-            content:
-              "⏰ Setup timed out after 60 seconds. Please run `/setup` again.",
+          await ctx.editReply({
+            embeds: [selectedEmbed],
+            components: [],
+          });
+        } catch (err: any) {
+          if (err?.code === "InteractionCollectorError") {
+            await ctx.editReply({
+              content:
+                "⏰ Setup timed out after 60 seconds. Please run `/server setup` again.",
+              embeds: [],
+              components: [],
+            });
+
+            logger.info(
+              `Setup timed out for ${ctx.user.tag} in guild ${ctx.guild.id}`,
+            );
+
+            return;
+          }
+
+          logger.error("Setup error:", err);
+
+          await ctx.editReply({
+            content: "❌ An unexpected error occurred during setup.",
             embeds: [],
             components: [],
           });
-          logger.error("Setup error", err);
-          return;
         }
 
         savedConfig = await prisma.guildConfig.upsert({
@@ -237,12 +253,14 @@ export default defineCommand({
                 : "None selected",
           },
         );
-
-      logger.info("Guild config:", guildConfig);
+      await ctx.editReply({
+        embeds: [completedEmbed],
+        components: [],
+      });
     } catch (e) {
       logger.error("Setup command failed:", e);
-      await ctx.interaction
-        ?.editReply({
+      await ctx
+        .editReply({
           content: "❌ Something went wrong running setup.",
           embeds: [],
           components: [],
@@ -250,4 +268,4 @@ export default defineCommand({
         .catch(() => {});
     }
   },
-});
+} satisfies SubCommand;

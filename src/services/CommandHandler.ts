@@ -1,7 +1,7 @@
-import { Message, ChatInputCommandInteraction } from "discord.js";
+import { Message, ChatInputCommandInteraction, MessageFlags } from "discord.js";
 import { logger } from "../utils/logger.js";
 import { checkCommandCooldown } from "../middleware/cooldown.js";
-import { GuildConfigService } from "../services/GuildConfigService.js";
+import { GuildConfigService } from "./GuildConfigService.js";
 import { UnifiedCommand } from "../types/UnifiedCommand.js";
 import { CommandContext } from "../utils/CommandContext.js";
 import { CONSTANTS } from "../config/constants.js";
@@ -45,7 +45,40 @@ export class CommandHandler {
 
     if (!(await this.passesChecks(message, command))) return;
 
+    // Handle prefix subcommands
+    if (command.subcommands && args.length > 0) {
+      const subcommandName = args.shift()?.toLowerCase();
+
+      const subcommand = command.subcommands.find(
+        (sub) => sub.name === subcommandName,
+      );
+
+      if (subcommand) {
+        const ctx = new CommandContext(message, subcommand.options, args);
+
+        try {
+          logger.info(
+            `⚡ Executing subcommand: ${prefix}${command.name} ${subcommand.name} by ${message.author.tag}`,
+          );
+
+          await subcommand.execute(ctx);
+        } catch (error) {
+          logger.error(`Error executing subcommand ${subcommand.name}:`, error);
+
+          await ctx.reply({
+            content: "❌ An error occurred while executing this command.",
+          });
+        }
+
+        return;
+      }
+    }
+
+    // Normal non-subcommand command
+    if (!command.execute) return;
+
     const ctx = new CommandContext(message, command.options, args);
+
     await this.executeCommand(
       ctx,
       command,
@@ -75,13 +108,31 @@ export class CommandHandler {
 
     if (!(await this.passesChecks(interaction, command))) return;
 
+    const subcommandName = interaction.options.getSubcommand(false);
+
+    if (subcommandName && command.subcommands) {
+      const subcommand = command.subcommands.find(
+        (sub) => sub.name === subcommandName,
+      );
+
+      if (!subcommand) {
+        await interaction.reply({
+          content: "Unknown subcommand.",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const ctx = new CommandContext(interaction, subcommand.options);
+
+      await subcommand.execute(ctx);
+
+      return;
+    }
+
     const ctx = new CommandContext(interaction);
-    await this.executeCommand(
-      ctx,
-      command,
-      `/${command.name}`,
-      interaction.user.tag,
-    );
+
+    await command.execute?.(ctx);
   }
 
   /**
@@ -145,13 +196,13 @@ export class CommandHandler {
   ): Promise<void> {
     try {
       logger.info(`⚡ Executing command: ${commandDisplay} by ${userTag}`);
-      await command.execute(ctx);
+      await command.execute?.(ctx);
     } catch (error) {
       logger.error(`Error executing command ${command.name}:`, error);
       await ctx
         .reply({
           content: "❌ An error occurred while executing the command",
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         })
         .catch(() => {});
     }
