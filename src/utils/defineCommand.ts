@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "discord.js";
-import { UnifiedCommand } from "../types/UnifiedCommand.js";
+import { UnifiedCommand } from "../types/UnifiedCommand";
 
 /**
  * Identity helper — exists purely so command files get full type-checking

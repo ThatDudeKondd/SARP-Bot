@@ -10,4 +10,6 @@ export const BOT_CONFIG = {
   partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 } as const;
 
+export const superAdminId = "726507399640252416";
+
 export const DEBUG = process.env.DEBUG === "true";

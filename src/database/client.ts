@@ -5,9 +5,9 @@ import { Pool } from "pg";
 const connectionString = process.env.DATABASE_URL;
 
 const pool = new Pool({ connectionString });
-const adapter = new PrismaPg({ Pool } as any);
+const adapter = new PrismaPg(pool);
 
-export const prisma = new PrismaClient({ adapter }) as any;
+export const prisma = new PrismaClient({ adapter });
 
 export async function connectDatabase() {
   try {

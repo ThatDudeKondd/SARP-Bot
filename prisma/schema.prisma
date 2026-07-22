@@ -14,23 +14,29 @@ datasource db {
 
 // Guild configuration stored per guild
 model GuildConfig {
-  id        String   @id @default(cuid())
-  guildId   String   @unique
-  prefix    String   @default("!")
-  modLogChannelId String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  guildId            String   @unique
+  prefix             String   @default("!")
+  modLogChannelId    String?
+  directiveRoles     Int      @default(0)
+  seniorHrRoles      Int      @default(0)
+  managementRoles    Int      @default(0)
+  supervisorRoles    Int      @default(0)
+  administratorRoles Int      @default(0)
+  moderatorRoles     Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   @@map("guild_configs")
 }
 
 // Command cooldowns to prevent spam
 model CommandCooldown {
-  id        String   @id @default(cuid())
-  userId    String
+  id          String   @id @default(cuid())
+  userId      String
   commandName String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
 
   @@unique([userId, commandName])
   @@map("command_cooldowns")

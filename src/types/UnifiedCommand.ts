@@ -27,7 +27,12 @@ export interface CommandOption {
   choices?: CommandChoice[];
 }
 
-export type CommandCategory = "moderation" | "utility" | "erlc" | "admin";
+export type CommandCategory =
+  | "moderation"
+  | "utility"
+  | "erlc"
+  | "admin"
+  | "server";
 
 /**
  * A single command definition. Drop a file exporting one of these (as `default`)
