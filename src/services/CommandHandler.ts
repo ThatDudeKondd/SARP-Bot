@@ -1,8 +1,9 @@
 import { Message, ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../utils/logger.js";
-import { checkCooldown } from "../middleware/cooldown.js";
+import { checkCommandCooldown } from "../middleware/cooldown.js";
 import { GuildConfigService } from "../services/GuildConfigService.js";
-import { Command, CommandContext } from "../types/Command.js";
+import { UnifiedCommand } from "../types/UnifiedCommand.js";
+import { CommandContext } from "../utils/CommandContext.js";
 import { CONSTANTS } from "../config/constants.js";
 
 export class CommandHandler {
@@ -11,7 +12,8 @@ export class CommandHandler {
    */
   static async handlePrefixCommand(
     message: Message,
-    commands: Map<string, Command>,
+    commands: Map<string, UnifiedCommand>,
+    aliases: Map<string, UnifiedCommand>,
   ): Promise<void> {
     // Ignore bot messages
     if (message.author.bot) return;
@@ -37,13 +39,19 @@ export class CommandHandler {
 
     if (!commandName) return;
 
-    const command = commands.get(commandName);
+    const command = commands.get(commandName) ?? aliases.get(commandName);
 
-    if (!command) {
-      return;
-    }
+    if (!command) return;
 
-    await this.executeCommand(message, command, commandName, args);
+    if (!(await this.passesChecks(message, command))) return;
+
+    const ctx = new CommandContext(message, command.options, args);
+    await this.executeCommand(
+      ctx,
+      command,
+      `${prefix}${command.name}`,
+      message.author.tag,
+    );
   }
 
   /**
@@ -51,7 +59,7 @@ export class CommandHandler {
    */
   static async handleSlashCommand(
     interaction: ChatInputCommandInteraction,
-    commands: Map<string, Command>,
+    commands: Map<string, UnifiedCommand>,
   ): Promise<void> {
     if (!interaction.isChatInputCommand()) return;
 
@@ -60,65 +68,92 @@ export class CommandHandler {
     if (!command) {
       logger.warn(`Slash command not found: ${interaction.commandName}`);
       await interaction
-        .reply({
-          content: "❌ This command is not available",
-          ephemeral: true,
-        })
+        .reply({ content: "❌ This command is not available", ephemeral: true })
         .catch(() => {});
       return;
     }
 
+    if (!(await this.passesChecks(interaction, command))) return;
+
+    const ctx = new CommandContext(interaction);
     await this.executeCommand(
-      interaction,
+      ctx,
       command,
-      interaction.commandName,
-      [],
+      `/${command.name}`,
+      interaction.user.tag,
     );
   }
 
   /**
-   * Unified command execution handler
+   * Shared guildOnly / permission / cooldown gating for both invocation types.
+   * Sends the appropriate rejection reply itself and returns false if the
+   * command should not run.
+   */
+  private static async passesChecks(
+    source: Message | ChatInputCommandInteraction,
+    command: UnifiedCommand,
+  ): Promise<boolean> {
+    const isMessage = source instanceof Message;
+    const guild = isMessage ? source.guild : source.guild;
+    const userId = isMessage ? source.author.id : source.user.id;
+
+    const reject = async (content: string) => {
+      if (isMessage) {
+        await source.reply(content).catch(() => {});
+      } else {
+        await source.reply({ content, ephemeral: true }).catch(() => {});
+      }
+    };
+
+    if (command.guildOnly && !guild) {
+      await reject("❌ This command can only be used in a server.");
+      return false;
+    }
+
+    if (command.permissions?.length) {
+      const memberPermissions = isMessage
+        ? source.member?.permissions
+        : source.memberPermissions;
+      if (!memberPermissions || !memberPermissions.has(command.permissions)) {
+        await reject("❌ You do not have permission to use this command.");
+        return false;
+      }
+    }
+
+    const cooldownMs = command.cooldown ?? 3000;
+    const canExecute = await checkCommandCooldown(
+      userId,
+      command.name,
+      cooldownMs,
+      (seconds) =>
+        reject(
+          `⏱️ Please wait ${seconds}s before using \`${command.name}\` again.`,
+        ),
+    );
+
+    return canExecute;
+  }
+
+  /**
+   * Unified command execution — logging + error handling for both invocation types.
    */
   private static async executeCommand(
-    context: CommandContext,
-    command: Command,
-    commandName: string,
-    args: string[],
+    ctx: CommandContext,
+    command: UnifiedCommand,
+    commandDisplay: string,
+    userTag: string,
   ): Promise<void> {
     try {
-      // Check cooldown
-      const cooldownMs = command.cooldown || 3000;
-      const canExecute = await checkCooldown(context, commandName, cooldownMs);
-
-      if (!canExecute) return;
-
-      const isMessage = context instanceof Message;
-      const userTag = isMessage ? context.author.tag : context.user.tag;
-      const commandType = isMessage ? "prefix" : "slash";
-      const commandDisplay = isMessage
-        ? `${CONSTANTS.PREFIX}${commandName}`
-        : `/${commandName}`;
-
-      logger.info(
-        `📝 Executing ${commandType} command: ${commandDisplay} by ${userTag}`,
-      );
-
-      await command.execute(context, args);
+      logger.info(`⚡ Executing command: ${commandDisplay} by ${userTag}`);
+      await command.execute(ctx);
     } catch (error) {
-      logger.error(`Error executing command ${commandName}:`, error);
-
-      if (context instanceof Message) {
-        await context
-          .reply("❌ An error occurred while executing the command")
-          .catch(() => {});
-      } else if (context.isChatInputCommand()) {
-        await context
-          .reply({
-            content: "❌ An error occurred while executing the command",
-            ephemeral: true,
-          })
-          .catch(() => {});
-      }
+      logger.error(`Error executing command ${command.name}:`, error);
+      await ctx
+        .reply({
+          content: "❌ An error occurred while executing the command",
+          ephemeral: true,
+        })
+        .catch(() => {});
     }
   }
 }

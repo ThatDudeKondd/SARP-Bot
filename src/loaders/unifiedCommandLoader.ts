@@ -1,0 +1,119 @@
+import { readdirSync } from "fs";
+import { resolve } from "path";
+import { pathToFileURL } from "url";
+import { SlashCommandBuilder } from "discord.js";
+import { UnifiedCommand } from "../types/UnifiedCommand.js";
+import { buildSlashCommandData } from "../utils/defineCommand.js";
+import { logger } from "../utils/logger.js";
+
+export interface LoadedCommands {
+  /** Keyed by canonical command name — used for both `!name` and `/name`. */
+  byName: Map<string, UnifiedCommand>;
+  /** Keyed by alias — prefix-only, since slash commands don't support aliases. */
+  byAlias: Map<string, UnifiedCommand>;
+  /** Slash command builders, ready to hand to registerSlashCommands. */
+  slashData: SlashCommandBuilder[];
+}
+
+export class CommandLoader {
+  /**
+   * Walks src/commands/<category>/*.ts, loading each file's default export as a
+   * single UnifiedCommand and deriving both the prefix and slash registrations
+   * from it. One file = one command, registered as both.
+   */
+  static async loadCommands(baseDir: string): Promise<LoadedCommands> {
+    const byName = new Map<string, UnifiedCommand>();
+    const byAlias = new Map<string, UnifiedCommand>();
+    const slashData: SlashCommandBuilder[] = [];
+
+    try {
+      const categories = readdirSync(baseDir);
+
+      for (const category of categories) {
+        const categoryPath = resolve(baseDir, category);
+        const files = readdirSync(categoryPath).filter(
+          (file) =>
+            (file.endsWith(".js") || file.endsWith(".ts")) &&
+            !file.endsWith(".d.ts"),
+        );
+
+        for (const file of files) {
+          const filePath = resolve(categoryPath, file);
+
+          try {
+            const fileUrl = pathToFileURL(filePath).href;
+            const module = await import(fileUrl);
+            const command: UnifiedCommand =
+              module.default || Object.values(module)[0];
+
+            if (
+              !command ||
+              !command.name ||
+              typeof command.execute !== "function"
+            ) {
+              logger.warn(`Skipped invalid command in ${filePath}`);
+              continue;
+            }
+
+            if (byName.has(command.name)) {
+              logger.warn(
+                `Duplicate command name "${command.name}" in ${filePath}, skipping`,
+              );
+              continue;
+            }
+
+            byName.set(command.name, command);
+
+            for (const alias of command.aliases ?? []) {
+              byAlias.set(alias, command);
+            }
+
+            slashData.push(buildSlashCommandData(command));
+
+            logger.info(`✅ Loaded command: ${command.name} (prefix + slash)`);
+          } catch (error) {
+            logger.error(`Failed to load command from ${filePath}:`, error);
+          }
+        }
+      }
+
+      logger.success(`Loaded ${byName.size} commands`);
+      return { byName, byAlias, slashData };
+    } catch (error) {
+      logger.error("Failed to load commands:", error);
+      return { byName, byAlias, slashData };
+    }
+  }
+
+  /**
+   * Registers the generated slash command data with Discord.
+   */
+  static async registerSlashCommands(
+    client: any,
+    slashData: SlashCommandBuilder[],
+    guildIds: string[],
+  ) {
+    try {
+      const commandData = slashData.map((builder) => builder.toJSON());
+
+      if (guildIds.length > 0) {
+        for (const guildId of guildIds) {
+          const guild = await client.guilds.fetch(guildId);
+          if (guild) {
+            await guild.commands.set(commandData);
+            logger.info(
+              `Registered ${commandData.length} commands to guild ${guildId}`,
+            );
+          }
+        }
+      } else {
+        await client.application?.commands.set(commandData);
+        logger.info(`Registered ${commandData.length} commands globally`);
+      }
+
+      logger.success("Slash commands registered successfully");
+    } catch (error) {
+      logger.error("Failed to register slash commands:", error);
+    }
+  }
+}

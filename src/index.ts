@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { Client } from "discord.js";
+import { Client, SlashCommandBuilder } from "discord.js";
 import { resolve } from "path";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
@@ -11,8 +11,8 @@ import { connectDatabase, disconnectDatabase } from "./database/client.js";
 import { onReady } from "./events/ready.js";
 import { onMessageCreate } from "./events/messageCreate.js";
 import { onInteractionCreate } from "./events/interactionCreate.js";
-import { CommandLoader } from "./loaders/commandLoader.js";
-import { SlashCommandLoader } from "./loaders/slashCommandLoader.js";
+import { CommandLoader } from "./loaders/unifiedCommandLoader.js";
+import { UnifiedCommand } from "./types/UnifiedCommand.js";
 
 // Get __dirname equivalent for ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -23,9 +23,11 @@ validateEnv();
 
 const client = new Client(BOT_CONFIG);
 
-// Load commands dynamically
-let prefixCommands = new Map();
-let slashCommands = new Map();
+// Loaded once at startup: every command file yields one entry here, registered
+// as both a prefix command (byName/byAlias) and a slash command (slashData).
+let commands = new Map<string, UnifiedCommand>();
+let aliases = new Map<string, UnifiedCommand>();
+let slashData: SlashCommandBuilder[] = [];
 
 async function initializeBot() {
   try {
@@ -34,8 +36,10 @@ async function initializeBot() {
 
     // Load commands
     const commandsDir = resolve(__dirname, "commands");
-    prefixCommands = await CommandLoader.loadPrefixCommands(commandsDir);
-    slashCommands = await SlashCommandLoader.loadSlashCommands(commandsDir);
+    const loaded = await CommandLoader.loadCommands(commandsDir);
+    commands = loaded.byName;
+    aliases = loaded.byAlias;
+    slashData = loaded.slashData;
 
     logger.success("✅ Bot initialized successfully");
   } catch (error) {
@@ -45,14 +49,14 @@ async function initializeBot() {
 }
 
 // Event listeners
-client.on("ready", (readyClient) => onReady(readyClient, slashCommands));
+client.on("ready", (readyClient) => onReady(readyClient, slashData));
 
 client.on("messageCreate", (message) =>
-  onMessageCreate(message, prefixCommands),
+  onMessageCreate(message, commands, aliases),
 );
 
 client.on("interactionCreate", (interaction) =>
-  onInteractionCreate(interaction as any, slashCommands),
+  onInteractionCreate(interaction as any, commands),
 );
 
 // Error handling

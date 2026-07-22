@@ -1,20 +1,15 @@
-import { Client } from "discord.js";
+import { Client, SlashCommandBuilder } from "discord.js";
 import { logger } from "../utils/logger.js";
-import { SlashCommandLoader } from "../loaders/slashCommandLoader.js";
+import { CommandLoader } from "../loaders/unifiedCommandLoader.js";
 import { GUILD_IDS } from "../config/constants.js";
-import { SlashCommandType } from "../types/SlashCommand.js";
 
 export async function onReady(
   client: Client<true>,
-  slashCommands: Map<string, SlashCommandType>,
+  slashData: SlashCommandBuilder[],
 ) {
   logger.success(`✅ Logged in as ${client.user.tag}`);
   logger.info(`📊 Serving ${client.guilds.cache.size} guilds`);
 
-  // Register slash commands
-  await SlashCommandLoader.registerSlashCommands(
-    client,
-    slashCommands,
-    GUILD_IDS,
-  );
+  // Register slash commands (auto-generated from the same command files as the prefix commands)
+  await CommandLoader.registerSlashCommands(client, slashData, GUILD_IDS);
 }

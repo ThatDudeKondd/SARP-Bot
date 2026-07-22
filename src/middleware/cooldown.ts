@@ -1,6 +1,3 @@
-import { Message } from "discord.js";
-import { logger } from "../utils/logger.js";
-
 interface Cooldown {
   expiresAt: number;
 }
@@ -41,22 +38,24 @@ export function hasCooldown(userId: string, commandName: string): boolean {
   return getCooldown(userId, commandName) > 0;
 }
 
-export async function checkCooldown(
-  message: Message,
+/**
+ * Unified cooldown check, usable for both prefix and slash invocations since it
+ * only needs a user ID. Returns true if the command may run; if the user is on
+ * cooldown, `onCooldown` is called with the remaining seconds (as a string) and
+ * this returns false.
+ */
+export async function checkCommandCooldown(
+  userId: string,
   commandName: string,
-  cooldownMs: number = 3000,
+  cooldownMs: number,
+  onCooldown: (remainingSeconds: string) => Promise<unknown>,
 ): Promise<boolean> {
-  if (hasCooldown(message.author.id, commandName)) {
-    const remaining = getCooldown(message.author.id, commandName);
-    const seconds = (remaining / 1000).toFixed(1);
-
-    await message.reply(
-      `⏱️ Please wait ${seconds}s before using \`${commandName}\` again.`,
-    );
-
+  if (hasCooldown(userId, commandName)) {
+    const remaining = getCooldown(userId, commandName);
+    await onCooldown((remaining / 1000).toFixed(1));
     return false;
   }
 
-  setCooldown(message.author.id, commandName, cooldownMs);
+  setCooldown(userId, commandName, cooldownMs);
   return true;
 }
