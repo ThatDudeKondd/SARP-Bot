@@ -1,8 +1,8 @@
-import { Guild, PermissionsBitField } from "discord.js";
-import { superAdminId } from "../../config/config";
-import { defineCommand } from "../../utils/defineCommand";
-import { prisma } from "../../database/client";
-import { logger } from "../../utils/logger";
+import { PermissionsBitField } from "discord.js";
+import { superAdminId } from "../../config/config.js";
+import { defineCommand } from "../../utils/defineCommand.js";
+import { prisma } from "../../database/client.js";
+import { logger } from "../../utils/logger.js";
 
 export default defineCommand({
   name: "setup",
@@ -19,17 +19,28 @@ export default defineCommand({
       const isAdmin = ctx.member?.permissions?.has(
         PermissionsBitField.Flags.Administrator,
       );
-      if (!isSuperAdmin || !isAdmin) {
+      if (!isSuperAdmin && !isAdmin) {
         throw new Error(
           "Only a server administrator or the super admin can run setup.",
         );
       }
 
       const guildConfig = await prisma.guildConfig.findUnique({
-        where: { guildId },
+        where: { guildId: ctx.guild.id },
+        include: {
+          directiveRoles,
+          seniorHrRoles,
+          managementRoles,
+          supervisorRoles,
+          administratorRoles,
+          moderatorRoles,
+        },
       });
 
-      logger.info(guildConfig);
-    } catch (e) {}
+      logger.info("Guild config:", guildConfig);
+    } catch (e) {
+      logger.error("Setup command failed:", e);
+      await ctx.reply("❌ Something went wrong running setup.").catch(() => {});
+    }
   },
 });
