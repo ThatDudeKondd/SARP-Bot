@@ -10,6 +10,25 @@ export const BOT_CONFIG = {
   partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 } as const;
 
-export const superAdminId = "726507399640252416";
+const superAdminId = "726507399640252416";
 
-export const DEBUG = process.env.DEBUG === "true";
+const DEBUG = process.env.DEBUG;
+const erlcApiKey = process.env.ERLC_API_KEY || "";
+
+export const config = {
+  debugState: DEBUG,
+  superAdminId,
+  erlcApiBaseUrl: "https://api.erlc.gg/v2/server",
+  robloxUserPageUrl: "https://www.roblox.com/users/<USER_ID>/profile",
+  getOptions: {
+    method: "GET",
+    headers: { "server-key": erlcApiKey },
+  },
+  postOptions: {
+    method: "POST",
+    headers: {
+      "server-key": erlcApiKey,
+      "Content-Type": "application/json",
+    },
+  },
+};

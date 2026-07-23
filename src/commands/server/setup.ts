@@ -5,8 +5,7 @@ import {
   PermissionsBitField,
   RoleSelectMenuBuilder,
 } from "discord.js";
-import { superAdminId } from "../../config/config.js";
-//import { defineCommand } from "../../utils/defineCommand.js";
+import { config } from "../../config/config.js";
 import { prisma } from "../../database/client.js";
 import { logger } from "../../utils/logger.js";
 import { CONSTANTS } from "../../config/constants.js";
@@ -28,7 +27,7 @@ export default {
         deferred: ctx.interaction?.deferred,
       });
 
-      const isSuperAdmin = ctx.user.id === superAdminId;
+      const isSuperAdmin = ctx.user.id === config.superAdminId;
       const isAdmin = ctx.member?.permissions?.has(
         PermissionsBitField.Flags.Administrator,
       );

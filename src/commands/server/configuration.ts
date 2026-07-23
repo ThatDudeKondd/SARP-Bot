@@ -11,7 +11,7 @@ import {
 import { CONSTANTS } from "../../config/constants.js";
 import { prisma } from "../../database/client.js";
 import type { GuildConfig } from "../../generated/prisma/client.js";
-import { superAdminId } from "../../config/config.js";
+import { config } from "../../config/config.js";
 import { logger } from "../../utils/logger.js";
 import { SubCommand } from "../../types/UnifiedCommand.js";
 
@@ -138,7 +138,7 @@ export default {
     const guild = ctx.guild;
     const guildId = guild.id;
 
-    const isSuperAdmin = ctx.user.id === superAdminId;
+    const isSuperAdmin = ctx.user.id === config.superAdminId;
     const isAdmin = ctx.member?.permissions?.has(
       PermissionsBitField.Flags.Administrator,
     );

@@ -37,7 +37,17 @@ export class CommandLoader {
             !file.endsWith(".d.ts"),
         );
 
-        for (const file of files) {
+        // If this folder has an index file, it defines a parent command whose
+        // subcommands are the other files in the folder (imported directly by
+        // index.ts, e.g. `subcommands: [setup, configuration]`). Only the index
+        // file gets registered as a top-level command — the rest are subcommand
+        // sources, not standalone commands, and must not be loaded on their own
+        // or they'd end up registered twice (once nested, once standalone).
+        const indexFile = files.find((file) => /^index\.(js|ts)$/.test(file));
+
+        const filesToLoad = indexFile ? [indexFile] : files;
+
+        for (const file of filesToLoad) {
           const filePath = resolve(categoryPath, file);
 
           try {
@@ -70,7 +80,12 @@ export class CommandLoader {
 
             slashData.push(buildSlashCommandData(command));
 
-            logger.info(`✅ Loaded command: ${command.name} (prefix + slash)`);
+            const subcommandNote = command.subcommands
+              ? ` with subcommands: ${command.subcommands.map((s) => s.name).join(", ")}`
+              : "";
+            logger.info(
+              `✅ Loaded command: ${command.name} (prefix + slash)${subcommandNote}`,
+            );
           } catch (error) {
             logger.error(`Failed to load command from ${filePath}:`, error);
           }
