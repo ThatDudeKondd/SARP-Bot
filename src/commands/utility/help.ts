@@ -38,7 +38,7 @@ export default defineCommand({
         {
           name: "Notes",
           value:
-            "Some commands require specific server role permissions. Only admins or configured ERLC roles can manage server setup and run ERLC actions.",
+            "Some commands require specific server role permissions. Only supervisors+ or configured ERLC roles can manage server setup and run ERLC actions.",
           inline: false,
         },
       )
