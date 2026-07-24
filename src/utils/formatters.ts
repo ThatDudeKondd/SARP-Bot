@@ -62,6 +62,10 @@ export function truncateString(
   return str;
 }
 
+export function isPartialMatch(input: string, target: string): boolean {
+  return target.toLowerCase().startsWith(input.toLowerCase());
+}
+
 export function formatFieldsFromObject(
   obj: Record<string, unknown>,
   customFormatters: Record<string, (value: unknown) => string> = {},
