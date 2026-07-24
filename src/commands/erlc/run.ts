@@ -41,6 +41,20 @@ export default {
       isSuperAdmin ||
       ctx.member?.roles?.cache.some((role) => canRunRoles.includes(role.id));
 
+    if (!hasRunPerms) {
+      const embed = createErrorEmbed(
+        "You do not have permission to run this command.",
+        "This command is restricted to Supervisor+.",
+      );
+
+      await ctx.editReply({
+        embeds: [embed],
+        flags: MessageFlags.Ephemeral,
+      });
+
+      return;
+    }
+
     let command = ctx.getString("command");
     if (!command) {
       const embed = createErrorEmbed(
