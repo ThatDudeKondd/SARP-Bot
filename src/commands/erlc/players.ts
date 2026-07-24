@@ -63,30 +63,22 @@ export default {
       const players = Array.isArray(data.Players)
         ? data.Players
         : data.Players || [];
-      const playerLines = players
-        .slice(0, 25)
-        .map((player) => truncateString(player?.Player || "Unknown", 100));
+      const playerLines = players.slice(0, 25).map((player) => {
+        const localPlayer = player.Player ?? "Unknown";
+        const playerId = localPlayer.split(":")[1] ?? "";
+        const username = localPlayer.split(":")[0] ?? "Unknown";
+
+        const url = config.robloxUserPageUrl.replace("<USER_ID>", playerId);
+
+        return `[${username}](${url}) - ${player.Team}${
+          player.Callsign && player.Callsign !== "undefined"
+            ? ` - ${player.Callsign}`
+            : ""
+        }`;
+      });
       const totalCount = players.length;
 
-      let description = `Total players: ${totalCount}`;
-      for (const player of players) {
-        if (!player?.Player) {
-          logger.warn(
-            `Player object missing Player property: ${JSON.stringify(player)}`,
-          );
-        }
-
-        const localPlayer = player?.Player || "Unknown";
-        const playerId = localPlayer.split(":")[1] || "Unknown";
-        //const playerUsername = localPlayer.split(":")[0] || "Unknown"; Not in use, infrastructure for the querying of usernames.
-        const robloxUserUrl = config.robloxUserPageUrl.replace(
-          "<USER_ID>",
-          playerId,
-        );
-        if (playerLines.length > 0) {
-          description += `\n\n${`[${playerLines.join("\n")}](${robloxUserUrl})`} `;
-        }
-      }
+      let description = `Total players: ${totalCount} \n\n${playerLines.join("\n")}`;
 
       if (playerLines.length === 0) {
         description += "\n\nNo players online.\n\n";
