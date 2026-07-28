@@ -3,7 +3,6 @@ import { prisma } from "../../database/client.js";
 import { config } from "../../config/config.js";
 import {
   createErrorEmbed,
-  truncateString,
   createInfoEmbed,
   isPartialMatch,
 } from "../../utils/formatters.js";
@@ -64,21 +63,35 @@ export default {
         ? data.Players
         : data.Players || [];
       const playerLines = players.slice(0, 25).map((player) => {
-        const localPlayer = player.Player ?? "Unknown";
-        const playerId = localPlayer.split(":")[1] ?? "";
-        const username = localPlayer.split(":")[0] ?? "Unknown";
+        if (!indexUsername) {
+          const localPlayer = player.Player ?? "Unknown";
+          const playerId = localPlayer.split(":")[1] ?? "";
+          const username = localPlayer.split(":")[0] ?? "Unknown";
 
-        const url = config.robloxUserPageUrl.replace("<USER_ID>", playerId);
+          const url = config.robloxUserPageUrl.replace("<USER_ID>", playerId);
 
-        return `[${username}](${url}) - ${player.Team}${
-          player.Callsign && player.Callsign !== "undefined"
-            ? ` - ${player.Callsign}`
-            : ""
-        }`;
+          return `[${username}](${url}) - ${player.Team}${
+            player.Callsign && player.Callsign !== "undefined"
+              ? ` - ${player.Callsign}`
+              : ""
+          }`;
+        } else if (isPartialMatch(indexUsername, player.Player.split(":")[0])) {
+          const localPlayer = player.Player ?? "Unknown";
+          const playerId = localPlayer.split(":")[1] ?? "";
+          const username = localPlayer.split(":")[0] ?? "Unknown";
+
+          const url = config.robloxUserPageUrl.replace("<USER_ID>", playerId);
+
+          return `[${username}](${url}) - ${player.Team}${
+            player.Callsign && player.Callsign !== "undefined"
+              ? ` - ${player.Callsign}`
+              : ""
+          }`;
+        }
       });
       const totalCount = players.length;
 
-      let description = `Total players: ${totalCount} \n\n${playerLines.join("\n")}`;
+      let description = `Total players: ${totalCount} \n\n${playerLines.join("")}`;
 
       if (playerLines.length === 0) {
         description += "\n\nNo players online.\n\n";

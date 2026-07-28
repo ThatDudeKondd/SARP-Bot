@@ -15,6 +15,7 @@ export interface ReplyOptions {
   content?: string;
   embeds?: any[];
   components?: any[];
+  files?: any[];
   flags?: number | bigint;
 }
 

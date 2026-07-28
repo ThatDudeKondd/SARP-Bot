@@ -143,3 +143,19 @@ export interface ErlcServerInfo {
   EmergencyCalls: ErlcEmergencyCall[];
   Vehicles: ErlcVehicle[];
 }
+
+type ISODateString =
+  `${number}-${number}-${number}T${number}:${number}:${number}.${number}Z` & {
+    readonly __brand: unique symbol;
+  };
+
+export interface RobloxAPIResponse {
+  description: string;
+  created: ISODateString;
+  isBanned: boolean;
+  externalAppDisplayName: string;
+  hasVerifiedBadge: boolean;
+  id: number;
+  name: string;
+  displayName: string;
+}
