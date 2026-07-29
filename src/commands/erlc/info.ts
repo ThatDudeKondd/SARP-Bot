@@ -6,8 +6,6 @@ import {
   ErlcServerInfo,
   RobloxAPIResponse,
 } from "../../config/constants.js";
-import { log } from "node:console";
-import { createECDH } from "node:crypto";
 import { formatFieldsFromObject } from "../../utils/formatters.js";
 import { EmbedBuilder } from "discord.js";
 

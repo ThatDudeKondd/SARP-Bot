@@ -6,7 +6,6 @@ export default defineCommand({
   name: "help",
   description:
     "Help command, shows information about the bot and it's commands.",
-  category: "utility",
   aliases: [],
   cooldown: 1000,
   execute: async (ctx) => {

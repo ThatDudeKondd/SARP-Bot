@@ -3,7 +3,6 @@ import { defineCommand } from "../../utils/defineCommand.js";
 export default defineCommand({
   name: "echo",
   description: "Repeats the provided text.",
-  category: "utility",
   cooldown: 1000,
 
   options: [

@@ -32,7 +32,6 @@ export interface UnifiedCommand {
   name: string;
   description: string;
 
-  category?: string;
   aliases?: string[];
 
   cooldown?: number;

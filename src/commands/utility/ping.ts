@@ -5,7 +5,6 @@ import { defineCommand } from "../../utils/defineCommand.js";
 export default defineCommand({
   name: "ping",
   description: "Check the bot's latency",
-  category: "utility",
   aliases: ["latency"],
   cooldown: 3000,
   execute: async (ctx) => {
