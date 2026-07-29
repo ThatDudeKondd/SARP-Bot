@@ -1,3 +1,4 @@
+import { prisma } from "../../database/client.js";
 import { defineCommand } from "../../utils/defineCommand.js";
 import { logger } from "../../utils/logger.js";
 
@@ -29,11 +30,13 @@ export default defineCommand({
   execute: async (ctx) => {
     await ctx.defer();
 
-    const infractee = ctx.getString("user");
+    const infractee = ctx.getUser("user");
     const punishment = ctx.getString("punishment");
     const reason = ctx.getString("reason");
-    logger.info(
-      `Infractee: ${infractee}, punishment ${punishment}, reason ${reason}`,
-    );
+
+    const infracteeData = await prisma.user.findUnique({
+      where: { userId: infractee?.id },
+    });
+    logger.info("Infractee Database Data:", infracteeData);
   },
 });
