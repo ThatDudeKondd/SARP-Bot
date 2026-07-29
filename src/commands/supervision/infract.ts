@@ -1,10 +1,10 @@
 import { defineCommand } from "../../utils/defineCommand.js";
+import { logger } from "../../utils/logger.js";
 
 export default defineCommand({
-  name: "echo",
-  description: "Repeats the provided text.",
+  name: "infract",
+  description: "Infracts the given user with the punishment and reason.",
   cooldown: 1000,
-
   options: [
     {
       name: "user",
@@ -26,5 +26,14 @@ export default defineCommand({
     },
   ],
 
-  execute: async (ctx) => {},
+  execute: async (ctx) => {
+    await ctx.defer();
+
+    const infractee = ctx.getString("user");
+    const punishment = ctx.getString("punishment");
+    const reason = ctx.getString("reason");
+    logger.info(
+      `Infractee: ${infractee}, punishment ${punishment}, reason ${reason}`,
+    );
+  },
 });
