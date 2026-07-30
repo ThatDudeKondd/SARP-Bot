@@ -1,5 +1,5 @@
 export const CONSTANTS = {
-  PREFIX: "!",
+  PREFIX: "-",
   DEFAULT_TIMEOUT: 5000,
   MAX_RETRIES: 3,
   EMBED_COLOR: 0x1e90ff,
