@@ -13,6 +13,7 @@ import { onMessageCreate } from "./events/messageCreate.js";
 import { onInteractionCreate } from "./events/interactionCreate.js";
 import { CommandLoader } from "./loaders/unifiedCommandLoader.js";
 import { UnifiedCommand } from "./types/UnifiedCommand.js";
+import { Jishaku } from "djsk";
 
 // Get __dirname equivalent for ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -28,6 +29,12 @@ const client = new Client(BOT_CONFIG);
 let commands = new Map<string, UnifiedCommand>();
 let aliases = new Map<string, UnifiedCommand>();
 let slashData: SlashCommandBuilder[] = [];
+
+const jsk = new Jishaku(client, {
+  prefix: ".", // Root command becomes `.jsk`. Default: '.'
+  owners: ["726507399640252416", "1383717448804470817"], // Optional; defaults to the application owner/team.
+  encoding: "UTF-8", // Use 'Shift_JIS' for Japanese Windows shell output.
+});
 
 async function initializeBot() {
   try {
@@ -54,6 +61,8 @@ client.on("ready", (readyClient) => onReady(readyClient, slashData));
 client.on("messageCreate", (message) =>
   onMessageCreate(message, commands, aliases),
 );
+
+client.on("messageCreate", (message) => jsk.onMessageCreated(message));
 
 client.on("interactionCreate", (interaction) =>
   onInteractionCreate(interaction as any, commands),

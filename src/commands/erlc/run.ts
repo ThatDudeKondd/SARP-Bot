@@ -7,7 +7,7 @@ import {
 } from "../../utils/formatters.js";
 import { logger } from "../../utils/logger.js";
 import { config } from "../../config/config.js";
-import { ErlcServerInfo } from "../../config/constants.js";
+import { ErlcServerInfo, SUPER_ADMIN_ID } from "../../config/constants.js";
 import { MessageFlags } from "discord.js";
 
 export default {
@@ -28,7 +28,7 @@ export default {
       where: { guildId: ctx.guild?.id },
     });
 
-    const isSuperAdmin = ctx.user.id === process.env.SUPER_ADMIN_ID;
+    const isSuperAdmin = ctx.user.id === SUPER_ADMIN_ID;
 
     const canRunRoles = [
       ...(guildConfig.directiveRoles || []),

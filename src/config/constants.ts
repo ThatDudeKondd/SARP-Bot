@@ -15,6 +15,8 @@ export const GUILD_IDS =
 export const CLIENT_ID = process.env.CLIENT_ID || "";
 export const BOT_TOKEN = process.env.BOT_TOKEN || "";
 export const ERLC_API_KEY = process.env.ERLC_API_KEY || "";
+export const SUPER_ADMIN_ID = process.env.SUPER_ADMIN_ID || "";
+export const CAN_USE_JSK_IDS = process.env.CAN_USE_JSK || "";
 
 /**
  * Shape of the ERLC `/Server` endpoint response, based on a real sample response.

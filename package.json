@@ -18,6 +18,7 @@
     "@prisma/adapter-pg": "^7.9.0",
     "@prisma/client": "^7.9.0",
     "discord.js": "^14.14.0",
+    "djsk": "^0.5.0",
     "dotenv": "^17.4.2",
     "pg": "^8.22.0"
   },
@@ -27,5 +28,9 @@
     "prisma": "^7.9.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
+  },
+  "allowScripts": {
+    "prisma@7.9.0": true,
+    "@prisma/engines@7.9.0": true
   }
 }
