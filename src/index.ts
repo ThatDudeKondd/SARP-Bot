@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { Client, SlashCommandBuilder } from "discord.js";
+import { Client, messageLink, SlashCommandBuilder } from "discord.js";
 import { resolve } from "path";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
@@ -58,9 +58,11 @@ async function initializeBot() {
 // Event listeners
 client.on("ready", (readyClient) => onReady(readyClient, slashData));
 
-client.on("messageCreate", (message) => {
-  (onMessageCreate(message, commands, aliases), jsk.onMessageCreated(message));
-});
+client.on("messageCreate", (message) =>
+  onMessageCreate(message, commands, aliases),
+);
+
+client.on("messageCreate", (message) => jsk.onMessageCreated(message));
 
 client.on("interactionCreate", (interaction) =>
   onInteractionCreate(interaction as any, commands),
