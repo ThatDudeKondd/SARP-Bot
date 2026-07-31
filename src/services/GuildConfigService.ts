@@ -30,7 +30,10 @@ export class GuildConfigService {
    */
   static async updateConfig(
     guildId: string,
-    data: { prefix?: string; modLogChannelId?: string },
+    data: {
+      prefix?: string;
+      modLogChannelId?: string;
+    },
   ) {
     try {
       const config = await prisma.guildConfig.upsert({

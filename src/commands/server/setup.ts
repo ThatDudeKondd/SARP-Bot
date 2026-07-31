@@ -10,6 +10,7 @@ import { prisma } from "../../database/client.js";
 import { logger } from "../../utils/logger.js";
 import { CONSTANTS } from "../../config/constants.js";
 import { SubCommand } from "../../types/UnifiedCommand.js";
+import { GuildConfigService } from "../../services/GuildConfigService.js";
 
 export default {
   name: "setup",
@@ -37,9 +38,7 @@ export default {
         );
       }
 
-      const guildConfig = await prisma.guildConfig.findUnique({
-        where: { guildId: ctx.guild.id },
-      });
+      const guildConfig = GuildConfigService.getConfig(ctx.guild.id);
 
       const introEmbed = new EmbedBuilder()
         .setTitle("Server Setup")

@@ -14,6 +14,7 @@ import type { GuildConfig } from "../../generated/prisma/client.js";
 import { config } from "../../config/config.js";
 import { logger } from "../../utils/logger.js";
 import { SubCommand } from "../../types/UnifiedCommand.js";
+import { GuildConfigService } from "../../services/GuildConfigService.js";
 
 type RoleCategoryKey =
   | "directiveRoles"
@@ -236,11 +237,8 @@ export default {
 
               guildConfig[categoryKey] = selectInteraction.values;
 
-              await prisma.guildConfig.update({
-                where: { guildId },
-                data: {
-                  [categoryKey]: selectInteraction.values,
-                },
+              await GuildConfigService.updateConfig(guildId, {
+                [categoryKey]: selectInteraction.values,
               });
 
               await selectInteraction.update({

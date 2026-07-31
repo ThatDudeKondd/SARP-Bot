@@ -49,6 +49,8 @@ model CommandCooldown {
 model User {
   id          String   @id @default(cuid())
   userId      String   @unique
+  username    String   @unique
+  roles       String[] @default([])
   infractions String[] @default([])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

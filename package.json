@@ -12,7 +12,8 @@
     "db:push": "prisma db push",
     "db:seed": "node --loader ts-node/esm prisma/seed.ts",
     "db:studio": "prisma studio",
-    "db:gen": "npx prisma generate"
+    "db:gen": "npx prisma generate",
+    "db:format": "npx prisma format"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.0",

@@ -9,6 +9,7 @@ import {
 import { ErlcServerInfo, SUPER_ADMIN_ID } from "../../config/constants.js";
 import { logger } from "../../utils/logger.js";
 import { MessageFlags } from "discord.js";
+import { GuildConfigService } from "../../services/GuildConfigService.js";
 
 export default {
   name: "players",
@@ -26,9 +27,9 @@ export default {
 
     const indexUsername = ctx.getString("username")?.toLowerCase() || null;
 
-    const guildConfig = await prisma.guildConfig.findUniqueOrThrow({
-      where: { guildId: ctx.guild?.id },
-    });
+    const guildConfig = await GuildConfigService.getConfig(
+      ctx.guild?.id as string,
+    );
 
     const isSuperAdmin = ctx.user.id === SUPER_ADMIN_ID;
 
