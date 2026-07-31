@@ -48,6 +48,7 @@ export default defineCommand({
             userId: member.id,
             roles: roleIds,
             username: member.user.username,
+            guilds: [guild.id],
           },
         });
 

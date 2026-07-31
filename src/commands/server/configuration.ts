@@ -129,6 +129,7 @@ function createEditButtons() {
 export default {
   name: "configuration",
   description: "View or edit the server's role-based access configuration.",
+  aliases: ["config", "cfg"],
   execute: async (ctx) => {
     await ctx.defer();
 

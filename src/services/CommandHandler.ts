@@ -55,7 +55,8 @@ export class CommandHandler {
       const subcommandName = args.shift()?.toLowerCase();
 
       const subcommand = command.subcommands.find(
-        (sub) => sub.name === subcommandName,
+        (sub) =>
+          sub.name === subcommandName || sub.aliases?.includes(subcommandName!),
       );
 
       if (subcommand) {

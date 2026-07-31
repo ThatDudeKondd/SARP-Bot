@@ -11,6 +11,7 @@ import { logger } from "../../utils/logger.js";
 import { CONSTANTS } from "../../config/constants.js";
 import { SubCommand } from "../../types/UnifiedCommand.js";
 import { GuildConfigService } from "../../services/GuildConfigService.js";
+import { title } from "process";
 
 export default {
   name: "setup",
@@ -90,6 +91,11 @@ export default {
           description:
             "Select one or more roles that should be able to use moderator tools and /erlc players.",
         },
+        {
+          key: "infractionChannel",
+          title: "Infraction Channel",
+          description: "Select a channel to set as the infraction channel that will be used for sending infractions."
+        }
       ];
 
       let savedConfig: Awaited<
@@ -182,10 +188,12 @@ export default {
           where: { guildId: ctx.guild.id },
           update: {
             [category.key]: selectedRoles[category.key],
+            infractionChannel: 
           },
           create: {
             guildId: ctx.guild.id,
             [category.key]: selectedRoles[category.key],
+            infractionChannel: 
           },
         });
       }

@@ -9,11 +9,12 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "db:migrate": "prisma migrate dev",
-    "db:push": "prisma db push",
+    "db:push": "prisma db push --force-reset",
     "db:seed": "node --loader ts-node/esm prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:gen": "npx prisma generate",
-    "db:format": "npx prisma format"
+    "db:format": "npx prisma format",
+    "db:update": "npm run db:format && npm run db:push && npm run db:gen"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.0",

@@ -17,7 +17,7 @@ model GuildConfig {
   id      String @id @default(cuid())
   guildId String @unique
 
-  prefix          String  @default("!")
+  prefix          String  @default("-")
   modLogChannelId String?
 
   directiveRoles     String[]
@@ -26,6 +26,8 @@ model GuildConfig {
   supervisorRoles    String[]
   administratorRoles String[]
   moderatorRoles     String[]
+
+  infractionChannel String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -51,6 +53,7 @@ model User {
   userId      String   @unique
   username    String   @unique
   roles       String[] @default([])
+  guilds      String[] @default([])
   infractions String[] @default([])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

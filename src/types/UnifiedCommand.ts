@@ -23,6 +23,8 @@ export interface SubCommand {
   name: string;
   description: string;
 
+  aliases?: string[];
+
   options?: CommandOption[];
 
   execute: (ctx: CommandContext) => Promise<void>;
