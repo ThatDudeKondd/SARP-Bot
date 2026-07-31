@@ -12,6 +12,7 @@ import { onReady } from "./events/ready.js";
 import { onMessageCreate } from "./events/messageCreate.js";
 import { onInteractionCreate } from "./events/interactionCreate.js";
 import { CommandLoader } from "./loaders/unifiedCommandLoader.js";
+import { setCommandRegistry } from "./loaders/commandRegistry.js";
 import { UnifiedCommand } from "./types/UnifiedCommand.js";
 import { Jishaku } from "djsko";
 
@@ -47,6 +48,7 @@ async function initializeBot() {
     commands = loaded.byName;
     aliases = loaded.byAlias;
     slashData = loaded.slashData;
+    setCommandRegistry(commands);
 
     logger.success("✅ Bot initialized successfully");
   } catch (error) {

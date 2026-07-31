@@ -1,5 +1,5 @@
 {
-  "name": "sarp-bot",
+  "name": "sarp-utilities",
   "version": "1.0.0",
   "description": "Discord bot written in TypeScript",
   "main": "dist/index.js",
@@ -27,6 +27,7 @@
     "nodemon": "^3.0.2",
     "prisma": "^7.9.0",
     "ts-node": "^10.9.2",
+    "tsx": "^4.23.1",
     "typescript": "^5.3.3"
   },
   "allowScripts": {

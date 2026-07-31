@@ -1,6 +1,19 @@
 import { EmbedBuilder, MessageFlags } from "discord.js";
 import { defineCommand } from "../../utils/defineCommand.js";
 import { CONSTANTS } from "../../config/constants.js";
+import { getCommandRegistry } from "../../loaders/commandRegistry.js";
+import { UnifiedCommand } from "../../types/UnifiedCommand.js";
+
+/** Renders one command's line in the help embed, including its subcommands if any. */
+function formatCommand(command: UnifiedCommand): string {
+  if (command.subcommands?.length) {
+    return command.subcommands
+      .map((sub) => `\`/${command.name} ${sub.name}\` - ${sub.description}`)
+      .join("\n");
+  }
+
+  return `\`/${command.name}\` - ${command.description}`;
+}
 
 export default defineCommand({
   name: "help",
@@ -9,6 +22,12 @@ export default defineCommand({
   aliases: [],
   cooldown: 1000,
   execute: async (ctx) => {
+    const commands = getCommandRegistry().sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+
+    const commandList = commands.map(formatCommand).join("\n");
+
     const helpEmbed = new EmbedBuilder()
       .setTitle("ERLC Bot Help")
       .setDescription(
@@ -17,21 +36,8 @@ export default defineCommand({
       .setColor(CONSTANTS.EMBED_COLOR)
       .addFields(
         {
-          name: "Utility Commands",
-          value:
-            "`/help` - Displays this help message.\n`/ping` - Replies with Pong!.\n`/echo` - Repeats the text you provide.",
-          inline: false,
-        },
-        {
-          name: "Server Commands",
-          value:
-            "`/server setup` - Start server role configuration for ERLC access.\n`/server configuration` - View or modify the current server configuration.",
-          inline: false,
-        },
-        {
-          name: "ERLC Commands",
-          value:
-            "`/erlc stats` - Fetch current ERLC server stats.\n`/erlc run <command>` - Execute a command on the ERLC server.\n`/erlc players` - List online ERLC players.",
+          name: "Commands",
+          value: commandList,
           inline: false,
         },
         {
